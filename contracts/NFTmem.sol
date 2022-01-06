@@ -21,12 +21,7 @@ contract NFTmem {
         address ad;
         string name;
         string gmail;
-    
-        address PLATINUM_address;
-        address DIAMOND_address;
-        address GOLD_address;
-        address SILVER_address;
-        address IRON_address;
+        address collectionAddress;
     }
 
     struct person
@@ -35,13 +30,8 @@ contract NFTmem {
         address ad;
         string name;
         string gmail;
-    
-        // uint[] PLATINUM_Owned;
-        // uint[] DIAMOND_Owned;
-        // uint[] GOLD_Owned;
-        // uint[] SILVER_Owned;
-        // uint[] IRON_Owned;
-
+        address[5][] collectionsOwned;
+        // mapping( address=> bool[5] ) collectionsOwned;
     }
 
     mapping (address=> person) people;
@@ -77,45 +67,55 @@ contract NFTmem {
         return people[_ad];
     }
     
-    
-    
+
 // onlyInfluencer
-    function deployCollection(address account) public  returns(address){
+    function deployCollection(address account,string memory uri) public  returns(address){
         // modifier - for registered influncer 
-        influencers[account].PLATINUM_address = address( new NFT( payable(account) , ""));
-        return influencers[account].PLATINUM_address;
+        influencers[account].collectionAddress = address( new NFT(uri));
+        return influencers[account].collectionAddress;
     }
-    function getIron(address a) public view returns(uint){
-      return NFT(influencers[a].PLATINUM_address).getBalance(a,4);
+
+    function mint(address influencerAddress, uint id) public {
+      address CollectionAddress =  getCollectionAddress(influencerAddress);
+    NFT(CollectionAddress).mint(msg.sender,id,1,"");
+    uint l = people[msg.sender].collectionsOwned[id].length;
+    // todo
+    // people[msg.sender].collectionsOwned[id][l] = CollectionAddress;
+
     }
     
-    function getSilver(address a) public view returns(uint){
-      return NFT(influencers[a].PLATINUM_address).getBalance(a,3);
+    function getCollectionAddress(address influencerAddress) public view returns(address){
+        return address(NFT(influencers[influencerAddress].collectionAddress));
     }
-    function getGold(address a) public view returns(uint){
-      return NFT(influencers[a].PLATINUM_address).getBalance(a,2);
+
+    function getIronBalance(address a) public view returns(uint){
+      return NFT(influencers[a].collectionAddress).getBalance(a,4);
+    }
+    
+    function getSilverBalance(address a) public view returns(uint){
+      return NFT(influencers[a].collectionAddress).getBalance(a,3);
+    }
+    function getGoldBalance(address a) public view returns(uint){
+      return NFT(influencers[a].collectionAddress).getBalance(a,2);
     }
 }
-
 
 contract NFT is ERC1155{
 
-uint256  PLATINUM=0; 
+uint256  PLATINUM=0;
 uint256  DIAMOND=1;
-uint256  GOLD=2; 
+uint256  GOLD=2;
 uint256  SILVER=3;
-uint256  IRON=4;
+uint256  IRON=4;    
 
-constructor(address payable account, string memory uri) ERC1155(uri){
+constructor(string memory uri) ERC1155(uri){}
 
-}
 function transfer(address _to, uint256 _id, uint256 _value) public {
         safeTransferFrom(msg.sender,_to,_id,_value,"");
     }
 
-    function mint(address to,uint256 id,uint256 amount,bytes memory data)public {
+    function mint(address to,uint256 id,uint256 amount,bytes memory data)public{
         _mint(to , id,amount,data);
-        
     }
 
     function getBalance(address _owner, uint256 _id) public view returns(uint){
@@ -131,9 +131,3 @@ function transfer(address _to, uint256 _id, uint256 _value) public {
         _burn(account,id,amount);
     }
 }
-
-// interface INFT {
-// function transfer(address _to, uint256 _id, uint256 _value) external ;
-// function getBalance(address _owner, uint256 _id) external view returns(uint);
-// function burn(address account,uint256 id,uint amount) external;
-// }
